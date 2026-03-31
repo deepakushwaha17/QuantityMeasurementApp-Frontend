@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quantity Measurement</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;600&display=swap"
+        rel="stylesheet" />
+
+</head>
+
+<body>
+
+    <!-- AUTH PAGE -->
+    <div id="authPage">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Quantity Measurement</h1>
+                <p>Sign in to start measuring</p>
+            </div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchTab('login')">Login</button>
+                <button class="auth-tab" onclick="switchTab('signup')">Sign Up</button>
+            </div>
+            <div class="auth-body">
+                <!-- LOGIN -->
+                <div id="loginForm">
+                    <div class="a-field"><label>Email</label><input type="email" id="lEmail"
+                            placeholder="you@email.com" /></div>
+                    <div class="a-field"><label>Password</label><input type="password" id="lPass"
+                            placeholder="••••••••" /></div>
+                    <button class="btn-auth" id="btnLogin" onclick="doLogin()">Login</button>
+                    <div class="a-error" id="lErr"></div>
+                </div>
+                <!-- SIGNUP -->
+                <div id="signupForm" style="display:none">
+                    <div class="a-field"><label>Email</label><input type="email" id="sEmail"
+                            placeholder="you@email.com" /></div>
+                    <div class="a-field"><label>Password</label><input type="password" id="sPass"
+                            placeholder="Min 8 characters" /></div>
+                    <button class="btn-auth" id="btnSignup" onclick="doSignup()">Create Account</button>
+                    <div class="a-error" id="sErr"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN PAGE -->
+    <div id="mainPage">
+        <nav class="topnav">
+            <div class="nav-logo">Quantity <span>Measurement</span></div>
+            <div class="nav-right">
+                <span class="nav-email" id="navEmail"></span>
+                <button class="btn-logout" onclick="doLogout()">Logout</button>
+            </div>
+        </nav>
+
+        <div class="main-wrap">
+            <!-- APP CARD -->
+            <div class="app-card">
+                <div class="app-card-header">Welcome To Quantity Measurement</div>
+                <div class="app-card-body">
+
+                    <!-- CHOOSE TYPE -->
+                    <div class="sec-label">Choose Type</div>
+                    <div class="type-grid">
+                        <div class="type-card active" onclick="pickType(this,'LengthUnit')">
+                            <span class="type-icon">📏</span>
+                            <div class="type-name">Length</div>
+                        </div>
+                        <div class="type-card" onclick="pickType(this,'WeightUnit')">
+                            <span class="type-icon">⚖️</span>
+                            <div class="type-name">Weight</div>
+                        </div>
+                        <div class="type-card" onclick="pickType(this,'TemperatureUnit')">
+                            <span class="type-icon">🌡️</span>
+                            <div class="type-name">Temperature</div>
+                        </div>
+                        <div class="type-card" onclick="pickType(this,'VolumeUnit')">
+                            <span class="type-icon">🧴</span>
+                            <div class="type-name">Volume</div>
+                        </div>
+                    </div>
+
+                    <!-- CHOOSE ACTION -->
+                    <div class="sec-label">Choose Action</div>
+                    <div class="action-tabs" id="mainTabs">
+                        <button class="action-tab active" onclick="pickAction(this,'compare')">Comparison</button>
+                        <button class="action-tab" onclick="pickAction(this,'convert')">Conversion</button>
+                        <button class="action-tab" onclick="pickAction(this,'arithmetic')">Arithmetic</button>
+                    </div>
+
+                    <!-- ARITHMETIC SUB TABS -->
+                    <div class="arith-sub" id="arithSub" style="display:none">
+                        <div class="sec-label">Arithmetic Operation</div>
+                        <div class="action-tabs" id="arithTabs">
+                            <button class="action-tab active" onclick="pickArith(this,'add')">Add</button>
+                            <button class="action-tab"
+                                onclick="pickArith(this,'add-with-target-unit')">Add+Target</button>
+                            <button class="action-tab" onclick="pickArith(this,'subtract')">Subtract</button>
+                            <button class="action-tab"
+                                onclick="pickArith(this,'subtract-with-target-unit')">Sub+Target</button>
+                            <button class="action-tab" onclick="pickArith(this,'divide')">Divide</button>
+                        </div>
+                    </div>
+
+                    <!-- VALUE INPUTS -->
+                    <div class="from-to-grid">
+                        <div class="ft-group">
+                            <div class="ft-lbl" id="lbl1">Value 1</div>
+                            <input class="inp" type="number" id="val1" placeholder="e.g. 1" step="any" />
+                            <!-- Unit dropdown -->
+                            <select class="sel" id="unit1"></select>
+                        </div>
+                        <div class="ft-group">
+                            <div class="ft-lbl" id="lbl2">Value 2</div>
+                            <input class="inp" type="number" id="val2" placeholder="e.g. 12" step="any" />
+                            <select class="sel" id="unit2"></select>
+                        </div>
+                    </div>
+
+                    <!-- TARGET ROW -->
+                    <div class="target-row" id="targetRow" style="display:none">
+                        <span class="ft-lbl">Target Unit (Express result in)</span>
+                        <div class="target-inner" style="margin-top:8px">
+                            <input class="inp" type="number" id="targetVal" placeholder="0" step="any" />
+                            <select class="sel" id="targetUnit"></select>
+                        </div>
+                    </div>
+
+                    <button class="btn-run" id="btnRun" onclick="runOp()">Run Operation</button>
+
+                    <!-- RESULT -->
+                    <div class="result-box" id="resultBox">
+                        <div class="res-lbl">Result</div>
+                        <div class="res-val" id="resVal">—</div>
+                        <div class="res-unit" id="resUnit"></div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- HISTORY -->
+            <div class="hist-sidebar">
+                <div class="hist-head">
+                    History
+                    <button class="btn-clr" onclick="clearHist()">CLEAR</button>
+                </div>
+                <div class="hist-filter">
+                    <div class="hchip active" onclick="filterHist(this,'all')">All</div>
+                    <div class="hchip" onclick="filterHist(this,'compare')">Compare</div>
+                    <div class="hchip" onclick="filterHist(this,'convert')">Convert</div>
+                    <div class="hchip" onclick="filterHist(this,'add')">Add</div>
+                    <div class="hchip" onclick="filterHist(this,'subtract')">Sub</div>
+                    <div class="hchip" onclick="filterHist(this,'divide')">Divide</div>
+                    <div class="hchip" onclick="filterHist(this,'error')">Errors</div>
+                </div>
+                <div class="hist-list" id="histList">
+                    <div class="hist-empty">No operations yet.<br />Run something!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
