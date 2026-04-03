@@ -1,6 +1,7 @@
 /* ── CONFIG ──────────────────────────────────────── */
 const API = 'http://localhost:8080';
 
+
 // Exact enum values from your QuantityDTO
 const UNITS = {
   LengthUnit:      ['FEET','INCHES','YARDS','CENTIMETERS'],
@@ -88,6 +89,25 @@ async function doSignup() {
   }
 }
 
+// Google AUTH
+const params = new URLSearchParams(window.location.search);
+const googleToken = params.get('token');
+const googleEmail = params.get('email'); // if your backend passes it
+if (googleToken) {
+    token = googleToken;
+    email = googleEmail || '';
+    localStorage.setItem('qm_token', token);
+    if (googleEmail) localStorage.setItem('qm_email', email);
+    window.history.replaceState({}, '', window.location.pathname); // clean URL
+    showMain();
+    toast('Signed in with Google ✓', 'ok');
+}
+
+// New function:
+function doGoogleAuth() {
+    window.location.href = `${API}/oauth2/authorization/google`;
+}
+
 /* ── LOGOUT ──────────────────────────────────────── */
 function doLogout() {
   token=null; email='';
@@ -125,7 +145,17 @@ function pickAction(btn, act) {
   curAct = act;
   document.getElementById('arithSub').style.display  = act==='arithmetic' ? '':'none';
   document.getElementById('targetRow').style.display = 'none';
-  document.getElementById('lbl2').textContent = act==='convert' ? 'To (target)' : 'Value 2';
+
+  // For convert: Value 2 column becomes the target unit selector — no second value needed
+  const val2Group = document.getElementById('val2').closest('.ft-group');
+  if(act === 'convert') {
+    document.getElementById('lbl2').textContent = 'Convert To (Target Unit)';
+    document.getElementById('val2').style.display = 'none'; // hide val2 input — not needed for convert
+  } else {
+    document.getElementById('lbl2').textContent = 'Value 2';
+    document.getElementById('val2').style.display = '';
+  }
+
   if(act==='arithmetic') pickArith(document.querySelector('#arithTabs .action-tab'), 'add');
   hideResult();
 }
@@ -135,6 +165,7 @@ function pickArith(btn, op) {
   document.querySelectorAll('#arithTabs .action-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   curArith = op;
+  // Show target unit row ONLY for add-with-target-unit and subtract-with-target-unit
   document.getElementById('targetRow').style.display = op.includes('with-target') ? '':'none';
   hideResult();
 }
@@ -146,6 +177,7 @@ function fillDropdowns() {
     const sel = document.getElementById(id);
     sel.innerHTML = units.map(u=>`<option value="${u}">${LABELS[u]||u}</option>`).join('');
   });
+  // Default unit2 and targetUnit to second option so they differ from unit1
   const u2 = document.getElementById('unit2');
   if(u2.options.length>1) u2.selectedIndex=1;
   const tu = document.getElementById('targetUnit');
@@ -155,47 +187,53 @@ function fillDropdowns() {
 /* ── RUN OPERATION ───────────────────────────────── */
 async function runOp() {
   const v1 = parseFloat(document.getElementById('val1').value);
-  const v2 = parseFloat(document.getElementById('val2').value);
   const u1 = document.getElementById('unit1').value;
   const u2 = document.getElementById('unit2').value;
 
-  if(isNaN(v1)||isNaN(v2)){ 
-    toast('Please enter both values.','err'); 
+  // For convert, val2 is hidden — we only need v1 and the target unit (u2)
+  // For all others, we need both values
+  const isConvert = curAct === 'convert';
+  const v2 = isConvert ? 0.0 : parseFloat(document.getElementById('val2').value);
+
+  if(isNaN(v1)){ 
+    toast('Please enter Value 1.','err'); 
+    return; 
+  }
+  if(!isConvert && isNaN(v2)){ 
+    toast('Please enter Value 2.','err'); 
     return; 
   }
 
-  // ✅ PERFECT MATCH WITH YOUR CONTROLLER ENDPOINTS
   const thisQ = { value:v1, unit:u1, measurementType:curType };
+  // For convert, thatQuantityDTO carries the target unit (value is irrelevant to backend)
   const thatQ = { value:v2, unit:u2, measurementType:curType };
 
   let endpoint;
-  
-  // 📍 EXACT ENDPOINT MAPPING FROM YOUR CONTROLLER
   if(curAct === 'compare') {
-    endpoint = 'compare';                    // POST /api/v1/quantities/compare
+    endpoint = 'compare';
   } else if(curAct === 'convert') {
-    endpoint = 'convert';                    // POST /api/v1/quantities/convert
+    endpoint = 'convert';
   } else if(curAct === 'arithmetic') {
     if(curArith === 'add-with-target') {
-      endpoint = 'add-with-target-unit';     // POST /api/v1/quantities/add-with-target-unit
+      endpoint = 'add-with-target-unit';
     } else if(curArith === 'subtract-with-target') {
-      endpoint = 'subtract-with-target-unit'; // POST /api/v1/quantities/subtract-with-target-unit
+      endpoint = 'subtract-with-target-unit';
     } else {
-      endpoint = curArith;                   // add, subtract, divide
+      endpoint = curArith;  // add | subtract | divide
     }
   }
 
-  // PERFECT DTO MATCH - QuantityInputDTO
+  // Build body — thatQuantityDTO always carries unit for target-based operations
   const body = { 
     thisQuantityDTO: thisQ, 
-    thatQuantityDTO: thatQ 
+    thatQuantityDTO: thatQ,
   };
 
-  // Add target for specific arithmetic operations
-  if(['add-with-target-unit','subtract-with-target-unit'].includes(endpoint)) {
-    const tv = parseFloat(document.getElementById('targetVal').value)||0;
+  // For add-with-target-unit / subtract-with-target-unit:
+  // send targetQuantityDTO with only the chosen unit (value:0 is ignored by backend)
+  if(endpoint === 'add-with-target-unit' || endpoint === 'subtract-with-target-unit') {
     const tu = document.getElementById('targetUnit').value;
-    body.targetQuantityDTO = { value:tv, unit:tu, measurementType:curType };
+    body.targetQuantityDTO = { value: 0.0, unit: tu, measurementType: curType };
   }
 
   const btn = document.getElementById('btnRun');
@@ -235,18 +273,15 @@ function displayResult(data, isErr) {
   if(isErr || data.error) {
     displayValue = data.errorMessage || 'Unknown error';
   } else {
-    // 1️⃣ Handle comparison (boolean or backend string)
     if(data.resultValue === true || data.resultValue === false) {
       displayValue = data.resultValue ? '✅ EQUAL' : '❌ NOT EQUAL';
     } 
     else if(data.resultString) {
       displayValue = data.resultString === 'Equal' ? '✅ EQUAL' : '❌ NOT EQUAL';
     }
-    // 2️⃣ Handle numeric results
     else if(typeof data.resultValue === 'number') {
       displayValue = data.resultValue;
     }
-    // 3️⃣ Fallback
     else {
       displayValue = data.resultValue !== undefined ? data.resultValue : data.value;
     }
@@ -257,6 +292,7 @@ function displayResult(data, isErr) {
   document.getElementById('resVal').textContent = displayValue;
   document.getElementById('resUnit').textContent = displayUnit ? `Unit: ${displayUnit}` : '';
 }
+
 function hideResult() { 
   document.getElementById('resultBox').className='result-box'; 
 }
