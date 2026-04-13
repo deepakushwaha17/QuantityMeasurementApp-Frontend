@@ -1,0 +1,17 @@
+.a-error {
+  background: #fff0f3;
+  border: 1px solid #ffc0cb;
+  color: var(--danger);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-family: var(--mono);
+  margin-top: 12px;
+  display: none;
+  line-height: 1.5;
+}
+
+.a-error.show {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}

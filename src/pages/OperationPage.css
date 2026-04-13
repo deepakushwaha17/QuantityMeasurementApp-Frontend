@@ -1,0 +1,43 @@
+.op-wrap {
+  flex: 1;
+  display: flex;
+  gap: 24px;
+  padding: 28px 32px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.app-card {
+  flex: 1;
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(79, 99, 255, 0.08);
+  overflow: hidden;
+}
+
+.app-card-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary2));
+  padding: 18px 28px;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.app-card-body {
+  padding: 28px;
+}
+
+@media (max-width: 900px) {
+  .op-wrap {
+    flex-direction: column;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-card-body {
+    padding: 16px;
+  }
+}

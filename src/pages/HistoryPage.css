@@ -1,0 +1,17 @@
+.history-wrap {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 28px 32px;
+  width: 100%;
+}
+
+.history-wrap .hist-sidebar {
+  width: 100%;
+  min-height: 500px;
+}
+
+@media (max-width: 560px) {
+  .history-wrap {
+    padding: 16px;
+  }
+}
